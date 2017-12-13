@@ -25,7 +25,9 @@ namespace ARuleComparer
             {
                 var splitRule = line.Split('=');
                 var left = splitRule[0].Split(',');
-                var right = splitRule[1].Split(',');
+                var temp = splitRule[2].Remove(0, 2);
+                var temp2 = temp.Split('#');
+                var right = temp2[0].Split(',');
                 Rules.Add(new Rule(left, right));
             }
 

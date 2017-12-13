@@ -35,16 +35,38 @@ namespace ARuleComparer
             return left;
         }
 
-        public override bool Equals(object obj)
-        {
-            return this.CompareTo(obj) == 0;
-        }
-
         public override string ToString()
         {
-            return Left.ToString() + "==>" + Right.ToString();
+            return Left.ToString() + "==> " + Right.ToString();
         }
     }
+
+    public class RuleComparer : IEqualityComparer<Rule>
+    {
+
+        public bool Equals(Rule x, Rule y)
+        {
+            //Check whether the objects are the same object. 
+            if (Object.ReferenceEquals(x, y))
+                return true;
+
+            //Check whether the products' properties are equal. 
+            return x.CompareTo(y) == 0;
+        }
+
+        public int GetHashCode(Rule obj)
+        {
+            //Get hash code for the Name field if it is not null. 
+            int leftSide = obj.Left.GetHashCode();
+
+            //Get hash code for the Code field. 
+            int rightSide = obj.Right.GetHashCode();
+
+            //Calculate the hash code for the product. 
+            return leftSide ^ rightSide;
+        }
+    }
+
 
     public class RuleSide : IComparable
     {
@@ -55,7 +77,7 @@ namespace ARuleComparer
             var array = items.ToArray();
             Array.Sort(array);
             this.Items = array;
-            
+
         }
 
         public bool IsEmpty()
@@ -72,11 +94,6 @@ namespace ARuleComparer
 
             return CompareRuleSides(this, r2, 0, 0);
 
-        }
-
-        public override bool Equals(object obj)
-        {
-            return this.CompareTo(obj) == 0;
         }
 
         /// <summary>
@@ -110,6 +127,17 @@ namespace ARuleComparer
         public override string ToString()
         {
             return String.Join(",", Items);
+        }
+
+        public override int GetHashCode()
+        {
+            var hash = 0;
+            foreach (string item in this.Items)
+            {
+                hash = hash ^ item.GetHashCode();
+            }
+            //Calculate the hash code for the product. 
+            return hash;
         }
     }
 }

@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -74,6 +75,8 @@ namespace ARuleComparer
 
         private void StartBtn_Click(object sender, RoutedEventArgs e)
         {
+            // This line needs to happen on the UI thread...
+            TaskScheduler uiScheduler = TaskScheduler.FromCurrentSynchronizationContext();
             ProgressLbl.Content = "Parsing rule files...";
             Task[] tasks = new Task[2]
             {
@@ -81,15 +84,19 @@ namespace ARuleComparer
                 Task.Factory.StartNew(() => _parser2.ParseFile())
             };
 
-            Task.Factory.ContinueWhenAll(tasks, (x) => ExportDifferences());
+            Task.Factory.ContinueWhenAll(tasks, (x) => ExportDifferences(uiScheduler));
         }
 
-        private void ExportDifferences()
+        private void ExportDifferences(TaskScheduler uiScheduler)
         {
-            ProgressLbl.Content = "Calculating differences...";
+            Task.Factory.StartNew(() =>
+            {
+                ProgressLbl.Content = "Calculating differences...";
+            }, CancellationToken.None, TaskCreationOptions.None, uiScheduler);
+            
 
-            var rules1_not_in_2 = _parser1.Rules.Except(_parser2.Rules).ToList();
-            var rules2_not_in_1 = _parser1.Rules.Except(_parser2.Rules).ToList();
+            var rules1_not_in_2 = _parser1.Rules.Except(_parser2.Rules, new RuleComparer()).ToList();
+            var rules2_not_in_1 = _parser2.Rules.Except(_parser1.Rules, new RuleComparer()).ToList();
 
             using (StreamWriter outputFile = new StreamWriter(outFile))
             {
@@ -99,6 +106,7 @@ namespace ARuleComparer
                 foreach (Rule rule in rules1_not_in_2)
                     outputFile.WriteLine(rule.ToString());
 
+                outputFile.WriteLine();
                 outputFile.WriteLine(String.Format("Rules present in {0} not appearing in {1}:", _parser2.RuleFile, _parser1.RuleFile));
                 outputFile.WriteLine("-----------------------------------------");
 
@@ -106,7 +114,11 @@ namespace ARuleComparer
                     outputFile.WriteLine(rule.ToString());
             }
 
-            ProgressLbl.Content = String.Format("Rule diffs written to: {0}", outFile);
+            Task.Factory.StartNew(() =>
+            {
+                ProgressLbl.Content = String.Format("Rule diffs written to: {0}", outFile);
+            }, CancellationToken.None, TaskCreationOptions.None, uiScheduler);
+            
         }
     }
 }
