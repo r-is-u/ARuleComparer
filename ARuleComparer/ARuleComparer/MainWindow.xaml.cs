@@ -30,7 +30,7 @@ namespace ARuleComparer
         private RuleParser _parser1;
         private RuleParser _parser2;
 
-        private string outFile = @"C:\Users\Sebastian\Desktop\ruleDiff.txt";
+        private string outFile = @"C:\Users\Sebastian\LRZ Sync+Share\Paper\Data Mining\Daten\ruleDiff.txt";
 
         public MainWindow()
         {
